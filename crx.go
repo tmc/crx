@@ -1,3 +1,4 @@
+// Package crx contains tools for producing Chrome crx files.
 package crx
 
 import (
@@ -16,7 +17,7 @@ import (
 	bufio "gopkg.in/bufio.v1"
 )
 
-const CRXMagic = "Cr24"
+const crxMagic = "Cr24"
 
 // CRXFromPath returns a reader that contains a CRX file.
 //
@@ -49,7 +50,7 @@ func WriteCRXFromZip(w io.Writer, zipContents io.Reader, rsaKey io.Reader) error
 		return err
 	}
 	header := make([]byte, 16)
-	copy(header, []byte(CRXMagic))
+	copy(header, []byte(crxMagic))
 	binary.LittleEndian.PutUint32(header[4:], uint32(2))
 	binary.LittleEndian.PutUint32(header[8:], uint32(len(pubBytes)))
 	binary.LittleEndian.PutUint32(header[12:], uint32(len(sig)))
