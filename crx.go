@@ -18,6 +18,9 @@ import (
 
 const CRXMagic = "Cr24"
 
+// CRXFromPath returns a reader that contains a CRX file.
+//
+// If walkable is nil it will fall back to the local filesystem.
 func CRXFromPath(path string, rsaKey io.Reader, walkable ziputil.Walkable) (io.Reader, error) {
 	zipBuf := bufio.NewBuffer([]byte{})
 	if err := ziputil.ZipPaths(zipBuf, []string{path}, walkable); err != nil {
@@ -27,6 +30,7 @@ func CRXFromPath(path string, rsaKey io.Reader, walkable ziputil.Walkable) (io.R
 	return outBuf, WriteCRXFromZip(outBuf, zipBuf, rsaKey)
 }
 
+// WriteCRXFromZip writes to the given writer a crx file that is described by zipContents.
 func WriteCRXFromZip(w io.Writer, zipContents io.Reader, rsaKey io.Reader) error {
 	pkey, err := privKey(rsaKey)
 	if err != nil {
