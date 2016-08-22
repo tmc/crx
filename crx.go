@@ -14,25 +14,24 @@ import (
 	"io/ioutil"
 
 	"github.com/tmc/crx/ziputil"
-	bufio "gopkg.in/bufio.v1"
 )
 
 const crxMagic = "Cr24"
 
-// CRXFromPath returns a reader that contains a CRX file.
+// FromPath returns a reader that contains a CRX file.
 //
 // If walkable is nil it will fall back to the local filesystem.
-func CRXFromPath(path string, rsaKey io.Reader, walkable ziputil.Walkable) (io.Reader, error) {
-	zipBuf := bufio.NewBuffer([]byte{})
+func FromPath(path string, rsaKey io.Reader, walkable ziputil.Walkable) (io.Reader, error) {
+	zipBuf := new(bytes.Buffer)
 	if err := ziputil.ZipPaths(zipBuf, []string{path}, walkable); err != nil {
 		return nil, err
 	}
-	outBuf := bufio.NewBuffer([]byte{})
-	return outBuf, WriteCRXFromZip(outBuf, zipBuf, rsaKey)
+	outBuf := new(bytes.Buffer)
+	return outBuf, FromZip(outBuf, zipBuf, rsaKey)
 }
 
-// WriteCRXFromZip writes to the given writer a crx file that is described by zipContents.
-func WriteCRXFromZip(w io.Writer, zipContents io.Reader, rsaKey io.Reader) error {
+// FromZip writes to the given writer a crx file that is described by zipContents.
+func FromZip(w io.Writer, zipContents io.Reader, rsaKey io.Reader) error {
 	pkey, err := privKey(rsaKey)
 	if err != nil {
 		return err
@@ -54,7 +53,6 @@ func WriteCRXFromZip(w io.Writer, zipContents io.Reader, rsaKey io.Reader) error
 	binary.LittleEndian.PutUint32(header[4:], uint32(2))
 	binary.LittleEndian.PutUint32(header[8:], uint32(len(pubBytes)))
 	binary.LittleEndian.PutUint32(header[12:], uint32(len(sig)))
-	fmt.Printf("%x	\n", header)
 	buf := bytes.NewBuffer(header)
 	if _, err := buf.Write(pubBytes); err != nil {
 		return err

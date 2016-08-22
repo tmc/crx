@@ -46,7 +46,7 @@ func mkcrx(keyPath, dirPath string) error {
 	}
 	defer crxFile.Close()
 
-	crxContents, err := crx.CRXFromPath(dirPath, keyFile, nil)
+	crxContents, err := crx.FromPath(dirPath, keyFile, nil)
 	if err != nil {
 		return err
 	}
