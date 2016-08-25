@@ -3,13 +3,14 @@ package ziputil
 import (
 	"archive/zip"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // Walkable represents a walkable filesystem-like type.
 type Walkable interface {
+	http.FileSystem
 	Walk(path string, walkFn filepath.WalkFunc) error
 }
 
@@ -17,6 +18,10 @@ type localfs struct{}
 
 func (localfs) Walk(path string, walkFn filepath.WalkFunc) error {
 	return filepath.Walk(path, walkFn)
+}
+
+func (localfs) Open(path string) (http.File, error) {
+	return os.Open(path)
 }
 
 // ZipPaths writes the provided paths to the given Writer.
@@ -37,17 +42,9 @@ func ZipPaths(out io.Writer, paths []string, walkable Walkable) error {
 }
 
 func addToZip(w *zip.Writer, path string, walkable Walkable) error {
-	s, err := os.Stat(path)
+	path, err := filepath.Abs(path)
 	if err != nil {
 		return err
-	}
-	path, err = filepath.Abs(path)
-	if err != nil {
-		return err
-	}
-	base := filepath.Dir(path)
-	if s.IsDir() {
-		base = path + "/"
 	}
 	return walkable.Walk(path, func(fp string, fi os.FileInfo, err error) error {
 		if err != nil {
@@ -57,7 +54,7 @@ func addToZip(w *zip.Writer, path string, walkable Walkable) error {
 		if err != nil {
 			return err
 		}
-		fh.Name = strings.TrimPrefix(fp, base)
+		fh.Name = fp
 		if fi.IsDir() {
 			if path == fp {
 				return nil
@@ -74,7 +71,7 @@ func addToZip(w *zip.Writer, path string, walkable Walkable) error {
 			return nil
 		}
 		if fh.Mode().IsRegular() {
-			f, err := os.Open(fp)
+			f, err := walkable.Open(fp)
 			if err != nil {
 				return err
 			}
